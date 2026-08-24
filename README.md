@@ -1,8 +1,10 @@
 # RockStation
 
-![RockStation](NewTheme.png)
+![RockStation](RockStation-Z-Rock.png)
 
 **24/7 free internet rock radio in the browser — no backend, no accounts, no ads.**
+
+**Live demo:** https://lonecod3r.github.io/Rock_Station/
 
 RockStation is a static, single-page web app that streams live internet radio across five curated genres. It pulls its station catalog from the free [Radio Browser API](https://api.radio-browser.info) and plays everything directly through the browser's native `<audio>` element. There is no server of any kind — the whole app is HTML, CSS and vanilla JavaScript, deployable to any static host.
 
@@ -37,7 +39,7 @@ RockStation is a static, single-page web app that streams live internet radio ac
 
 ### Integration
 - **Media Session API** — lock-screen and hardware media key support (play/pause/next/previous)
-- **Shareable deep links** — `#genre/station-name` in the URL restores the exact genre and station on load, with a one-tap "copy link" button
+- **Shareable deep links** — `#genre/station-name` in the URL restores the exact genre and station on load, with a share menu offering Facebook, LinkedIn, Viber and Instagram (plus a plain "copy link" option, and an automatic clipboard fallback if a native app deep link isn't available)
 - Browser tab title updates to the currently playing station
 
 ---
@@ -63,9 +65,10 @@ public/               deployable site root (this is what gets hosted)
   images/
     favicon.png
     hero-image.png / .webp
-firebase.json          Firebase Hosting config (serves public/ as the root)
-guitar.png             source art, kept for future edits — not used by the app directly
-NewTheme.png           source art / repo cover — not used by the app directly
+firebase.json           Firebase Hosting config (serves public/ as the root)
+guitar.png              source art, kept for future edits — not used by the app directly
+NewTheme.png            source art, kept for future edits — not used by the app directly
+RockStation-Z-Rock.png  repo/README cover — not used by the app directly
 ```
 
 ## Running locally
@@ -78,6 +81,18 @@ python -m http.server 8000
 Then open `http://localhost:8000`.
 
 ## Deploying
+
+**GitHub Pages** (used for the live demo above) — the `public/` folder is published as the root of the `gh-pages` branch:
+
+```bash
+git subtree split --prefix=public -b gh-pages-temp
+git push origin gh-pages-temp:gh-pages --force
+git branch -D gh-pages-temp
+```
+
+Then enable Pages in the repo settings (source: `gh-pages` branch, `/` root) — a one-time step.
+
+**Firebase Hosting**:
 
 ```bash
 firebase deploy
