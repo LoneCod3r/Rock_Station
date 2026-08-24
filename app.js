@@ -265,6 +265,7 @@
     stationMeta: document.getElementById('station-meta'),
     favoriteBtn: document.getElementById('favorite-btn'),
     shareBtn: document.getElementById('share-btn'),
+    shareMenu: document.getElementById('share-menu'),
     shareIcon: document.getElementById('share-icon'),
     checkIcon: document.getElementById('check-icon')
   };
@@ -775,30 +776,114 @@
     toggleFavorite(currentStation());
   });
 
-  els.shareBtn.addEventListener('click', function () {
-    var url = location.href;
-    var showCopied = function () {
-      els.shareIcon.style.display = 'none';
-      els.checkIcon.style.display = '';
-      setTimeout(function () {
-        els.shareIcon.style.display = '';
-        els.checkIcon.style.display = 'none';
-      }, 1500);
-    };
+  var showShareCopied = function () {
+    els.shareIcon.style.display = 'none';
+    els.checkIcon.style.display = '';
+    setTimeout(function () {
+      els.shareIcon.style.display = '';
+      els.checkIcon.style.display = 'none';
+    }, 1500);
+  };
+
+  var fallbackCopyLink = function (url) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showShareCopied();
+    } catch (e) {}
+  };
+
+  var copyShareLink = function (url) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(showCopied).catch(function () {});
+      navigator.clipboard.writeText(url).then(showShareCopied).catch(function () {
+        fallbackCopyLink(url);
+      });
     } else {
-      try {
-        var ta = document.createElement('textarea');
-        ta.value = url;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        showCopied();
-      } catch (e) {}
+      fallbackCopyLink(url);
+    }
+  };
+
+  var closeShareMenu = function () {
+    els.shareMenu.hidden = true;
+    els.shareBtn.setAttribute('aria-expanded', 'false');
+  };
+
+  var openShareMenu = function () {
+    els.shareMenu.hidden = false;
+    els.shareBtn.setAttribute('aria-expanded', 'true');
+  };
+
+  els.shareBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (els.shareMenu.hidden) {
+      openShareMenu();
+    } else {
+      closeShareMenu();
+    }
+  });
+
+  els.shareMenu.addEventListener('click', function (e) {
+    var btn = e.target.closest('.share-option');
+    if (!btn) return;
+    var platform = btn.getAttribute('data-platform');
+    var url = location.href;
+    var station = currentStation();
+    var title = station ? (displayName(station.name) + ' — RockStation') : 'RockStation';
+
+    switch (platform) {
+      case 'facebook':
+        window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url), '_blank', 'noopener');
+        closeShareMenu();
+        break;
+      case 'linkedin':
+        window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url), '_blank', 'noopener');
+        closeShareMenu();
+        break;
+      case 'viber':
+        (function () {
+          var launched = false;
+          var onBlur = function () {
+            launched = true;
+            window.removeEventListener('blur', onBlur);
+          };
+          window.addEventListener('blur', onBlur);
+          window.location.href = 'viber://forward?text=' + encodeURIComponent(title + ' ' + url);
+          setTimeout(function () {
+            window.removeEventListener('blur', onBlur);
+            if (!launched) {
+              copyShareLink(url);
+            }
+          }, 700);
+        })();
+        closeShareMenu();
+        break;
+      case 'instagram':
+        copyShareLink(url);
+        closeShareMenu();
+        break;
+      case 'copy':
+        copyShareLink(url);
+        closeShareMenu();
+        break;
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!els.shareMenu.hidden && !els.shareMenu.contains(e.target) && e.target !== els.shareBtn) {
+      closeShareMenu();
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !els.shareMenu.hidden) {
+      closeShareMenu();
+      els.shareBtn.focus();
     }
   });
 
