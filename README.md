@@ -4,7 +4,7 @@
 
 **24/7 free internet rock radio in the browser — no backend, no accounts, no ads.**
 
-**Live demo:** https://lonecod3r.github.io/Rock_Station/
+**Live demo:** https://lonecod3r.github.io/Rock_Station/ (also mirrored at https://rockstation.web.app)
 
 RockStation is a static, single-page web app that streams live internet radio across five curated genres. It pulls its station catalog from the free [Radio Browser API](https://api.radio-browser.info) and plays everything directly through the browser's native `<audio>` element. There is no server of any kind — the whole app is HTML, CSS and vanilla JavaScript, deployable to any static host.
 
@@ -39,7 +39,7 @@ RockStation is a static, single-page web app that streams live internet radio ac
 
 ### Integration
 - **Media Session API** — lock-screen and hardware media key support (play/pause/next/previous)
-- **Shareable deep links** — `#genre/station-name` in the URL restores the exact genre and station on load, with a share menu offering Facebook, LinkedIn, Viber and Instagram (plus a plain "copy link" option, and an automatic clipboard fallback if a native app deep link isn't available)
+- **Shareable deep links** — `#genre/station-name` in the URL restores the exact genre and station on load, with a one-tap "copy link" button (Clipboard API with an `execCommand` fallback for browsers where it's unavailable)
 - Browser tab title updates to the currently playing station
 
 ---
@@ -66,6 +66,7 @@ public/               deployable site root (this is what gets hosted)
     favicon.png
     hero-image.png / .webp
 firebase.json           Firebase Hosting config (serves public/ as the root)
+.firebaserc             pins the Firebase project (rockstation) for `firebase deploy`
 guitar.png              source art, kept for future edits — not used by the app directly
 NewTheme.png            source art, kept for future edits — not used by the app directly
 RockStation-Z-Rock.png  repo/README cover — not used by the app directly
@@ -92,10 +93,10 @@ git branch -D gh-pages-temp
 
 Then enable Pages in the repo settings (source: `gh-pages` branch, `/` root) — a one-time step.
 
-**Firebase Hosting**:
+**Firebase Hosting** (mirrored at the `.web.app` URL above):
 
 ```bash
 firebase deploy
 ```
 
-Requires the [Firebase CLI](https://firebase.google.com/docs/cli) and a configured Firebase project.
+Requires the [Firebase CLI](https://firebase.google.com/docs/cli), and either `firebase login` or a service account key (Project Settings → Service Accounts → Generate new private key) exported as `GOOGLE_APPLICATION_CREDENTIALS` — the latter is a useful fallback since the CLI's interactive login can occasionally fail with an "Unable to verify client" error. The target project is pinned in `.firebaserc`. Never commit a service account key — it grants full admin access to the Firebase project.
