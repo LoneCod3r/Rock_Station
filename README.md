@@ -4,7 +4,7 @@
 
 **24/7 free internet rock radio in the browser — no backend, no accounts, no ads.**
 
-**Live demo:** https://lonecod3r.github.io/Rock_Station/ (also mirrored at https://rockstation.web.app)
+https://rockstation.web.app
 
 RockStation is a static, single-page web app that streams live internet radio across five curated genres. It pulls its station catalog from the free [Radio Browser API](https://api.radio-browser.info) and plays everything directly through the browser's native `<audio>` element. There is no server of any kind — the whole app is HTML, CSS and vanilla JavaScript, deployable to any static host.
 
@@ -83,7 +83,7 @@ Then open `http://localhost:8000`.
 
 ## Deploying
 
-**GitHub Pages** (used for the live demo above) — the `public/` folder is published as the root of the `gh-pages` branch:
+**GitHub Pages** — the `public/` folder is published as the root of the `gh-pages` branch:
 
 ```bash
 git subtree split --prefix=public -b gh-pages-temp
@@ -93,7 +93,7 @@ git branch -D gh-pages-temp
 
 Then enable Pages in the repo settings (source: `gh-pages` branch, `/` root) — a one-time step.
 
-**Firebase Hosting** (mirrored at the `.web.app` URL above):
+**Firebase Hosting** (the live URL above):
 
 ```bash
 firebase deploy
