@@ -265,7 +265,6 @@
     stationMeta: document.getElementById('station-meta'),
     favoriteBtn: document.getElementById('favorite-btn'),
     shareBtn: document.getElementById('share-btn'),
-    shareMenu: document.getElementById('share-menu'),
     shareIcon: document.getElementById('share-icon'),
     checkIcon: document.getElementById('check-icon')
   };
@@ -809,82 +808,8 @@
     }
   };
 
-  var closeShareMenu = function () {
-    els.shareMenu.hidden = true;
-    els.shareBtn.setAttribute('aria-expanded', 'false');
-  };
-
-  var openShareMenu = function () {
-    els.shareMenu.hidden = false;
-    els.shareBtn.setAttribute('aria-expanded', 'true');
-  };
-
-  els.shareBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    if (els.shareMenu.hidden) {
-      openShareMenu();
-    } else {
-      closeShareMenu();
-    }
-  });
-
-  els.shareMenu.addEventListener('click', function (e) {
-    var btn = e.target.closest('.share-option');
-    if (!btn) return;
-    var platform = btn.getAttribute('data-platform');
-    var url = location.href;
-    var station = currentStation();
-    var title = station ? (displayName(station.name) + ' — RockStation') : 'RockStation';
-
-    switch (platform) {
-      case 'facebook':
-        window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url), '_blank', 'noopener');
-        closeShareMenu();
-        break;
-      case 'linkedin':
-        window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url), '_blank', 'noopener');
-        closeShareMenu();
-        break;
-      case 'viber':
-        (function () {
-          var launched = false;
-          var onBlur = function () {
-            launched = true;
-            window.removeEventListener('blur', onBlur);
-          };
-          window.addEventListener('blur', onBlur);
-          window.location.href = 'viber://forward?text=' + encodeURIComponent(title + ' ' + url);
-          setTimeout(function () {
-            window.removeEventListener('blur', onBlur);
-            if (!launched) {
-              copyShareLink(url);
-            }
-          }, 700);
-        })();
-        closeShareMenu();
-        break;
-      case 'instagram':
-        copyShareLink(url);
-        closeShareMenu();
-        break;
-      case 'copy':
-        copyShareLink(url);
-        closeShareMenu();
-        break;
-    }
-  });
-
-  document.addEventListener('click', function (e) {
-    if (!els.shareMenu.hidden && !els.shareMenu.contains(e.target) && e.target !== els.shareBtn) {
-      closeShareMenu();
-    }
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !els.shareMenu.hidden) {
-      closeShareMenu();
-      els.shareBtn.focus();
-    }
+  els.shareBtn.addEventListener('click', function () {
+    copyShareLink(location.href);
   });
 
   if (mediaSessionReady) {

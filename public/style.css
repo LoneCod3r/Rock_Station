@@ -293,42 +293,6 @@ a:hover { color: #ff4a5e; }
 .icon-btn:active { transform: scale(0.94); }
 #favorite-btn.active svg { stroke: var(--red); fill: var(--red); }
 
-.share-wrap { position: relative; }
-.share-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  min-width: 150px;
-  padding: 6px;
-  background: var(--card-alt);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.5);
-}
-.share-menu[hidden] { display: none; }
-.share-option {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 8px 10px;
-  border: none;
-  background: none;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.share-option:hover { background: #242424; }
-.share-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-
 @media (min-width: 800px) {
   .now-playing { min-height: 0; }
 }
