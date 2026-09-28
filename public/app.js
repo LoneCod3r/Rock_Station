@@ -53,7 +53,10 @@
       'metal rock radio': true,
       // Mostly pop-leaning despite the "rock" tag; deprioritized in favor of tighter fits.
       'radio oxígeno': true,
-      'rtbf classic 21': true
+      'rtbf classic 21': true,
+      // Dead: its TLS certificate expired (ERR_CERT_DATE_INVALID in every browser), yet Radio
+      // Browser still reports it as OK. Replaced by Rádio Cidade in EXTRA_STATIONS.rock.
+      'bons tempos fm': true
     },
     // Removed: tagged "synthwave" but it's a minor tag among many unrelated genres
     // (dnb/edm/jazz/reggae/etc) rather than the station's actual focus.
@@ -81,7 +84,7 @@
   // shrink the list instead of being backfilled by the next-ranked station.
   var STATIONS_LIMIT_OVERRIDES = {
     metal: 10,
-    rock: 8,
+    rock: 7, // was 8: Bons Tempos FM's slot goes to its hand-picked replacement, not the next API station
     synthwave: 3,
     gothic: 10,
     alternative: 10
@@ -97,7 +100,6 @@
     'exclusively nirvana': 'https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg',
     'metal rock radio': 'https://cdn-radiotime-logos.tunein.com/s221762q.png',
     "181.fm - 80's hairband": 'https://cdn-radiotime-logos.tunein.com/s90443q.png',
-    'bons tempos fm': 'https://files.cdn-files-a.com/uploads/11554423/800_6a5e7fdb7487d.png?aspect_ratio=1:1&width=180&format=png',
     'nightwave plaza': 'https://plaza.one/icons/apple-touch-icon.png',
     '89 a radio rock': 'https://cdn-profiles.tunein.com/s85089/images/logoq.jpg',
     'easy fm 972': 'https://cdn-profiles.tunein.com/s291260/images/logoq.jpg',
@@ -123,6 +125,7 @@
   };
   // Logos that are mostly text/wordmarks — shrink to fit instead of cropping to fill the circle.
   var ART_CONTAIN_FIT = {
+    'rádio cidade': true,
     'metal rock radio': true,
     'radio 1 rock': true,
     'z-rock radio': true,
@@ -146,8 +149,19 @@
   var EXTRA_STATIONS = {
     rock: [
       {
+        // Replaces Bons Tempos FM (Brazilian, Portuguese-language, tagged nostalgia/rock/romantic):
+        // Rio's classic/Brazilian/soft rock station. Radio Browser 06da0d92-28c2-11e9-a80b-52543be04c81.
+        name: 'Rádio Cidade',
+        url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOCIDADEAAC.aac',
+        codec: 'AAC',
+        art: 'https://cdn.jb.fm/site_cidade/Imagem_Site_Cidade.jpg',
+        country: 'BR',
+        bitrate: 48
+      },
+      {
         name: 'Radio 1 Rock',
         url: 'https://play.global.audio/radio1rockhi.aac',
+        codec: 'AAC',
         art: 'https://www.radio1rock.bg/theme_assets/radio1rock/images/logo.png',
         country: 'BG',
         bitrate: 128
@@ -171,6 +185,7 @@
       {
         name: 'Atomicwave FM',
         url: 'https://atomicwavefm.stream.laut.fm/atomicwavefm',
+        codec: 'MP3',
         art: 'https://assets.laut.fm/75ba3d39e80147363879b0e69654cc4b?t=_120x120',
         country: 'DE',
         bitrate: 128
@@ -178,6 +193,7 @@
       {
         name: 'Nightride FM - Darksynth',
         url: 'https://stream.nightride.fm/darksynth.mp3',
+        codec: 'MP3',
         art: 'https://nightride.fm/apple-touch-icon.png',
         country: 'DE',
         bitrate: 128
@@ -185,6 +201,7 @@
       {
         name: 'Nightride FM - Horrorsynth',
         url: 'https://stream.nightride.fm/horrorsynth.mp3',
+        codec: 'MP3',
         art: 'https://nightride.fm/apple-touch-icon.png',
         country: 'DE',
         bitrate: 128
@@ -192,6 +209,7 @@
       {
         name: 'Magic City Radio WATA-DB',
         url: 'https://cast6.my-control-panel.com/proxy/magiccityradio/stream',
+        codec: 'MP3',
         art: 'https://magiccity.radio/wp-content/uploads/2025/03/6-370x370.png',
         country: 'US',
         bitrate: 128
@@ -199,6 +217,7 @@
       {
         name: 'Sanctuary Radio (Retro 80s Channel)',
         url: 'https://patmos.cdnstream.com/proxy/sanctua1?mp=/stream2',
+        codec: 'MP3',
         art: 'https://cdn-radiotime-logos.tunein.com/s121324q.png',
         country: 'US',
         bitrate: 192
@@ -206,6 +225,7 @@
       {
         name: 'Palmera Blanca radio - Daystream',
         url: 'https://daystream.palmerablanca.com/daystream-128.mp3',
+        codec: 'MP3',
         art: 'https://palmerablanca.com/cover.png',
         country: 'KZ',
         bitrate: 128
@@ -236,8 +256,12 @@
     stationsByGenre: {},   // id -> array of {name, url}
     selectedByGenre: {},   // id -> station name
     favorites: loadFavorites(), // array of station objects, kept in sync with localStorage
-    playing: false,
-    error: false,
+    playing: false,        // true only once the <audio> element has actually started producing sound
+    status: 'idle',        // idle | connecting | playing | buffering | error
+    errorReason: '',       // key into ERROR_TEXT when status === 'error'
+    notice: '',            // shown after an auto-skip, so the skip isn't silent
+    noticeUntil: 0,        // keep the notice up at least until this time (ms), even once playing
+    activeStation: null,   // the station the current play attempt belongs to
     volume: 0.7,
     autoSkipCount: 0
   };
@@ -434,6 +458,7 @@
             uuid: s.stationuuid,
             art: art,
             country: (s.countrycode || '').trim(),
+            codec: (s.codec || '').trim().toUpperCase(),
             bitrate: s.bitrate || 0
           });
         }
@@ -504,10 +529,12 @@
       document.title = 'RockStation — Your Station. Your Rock.';
     } else {
       els.stationName.textContent = displayName(station);
-      if (state.playing) {
-        els.stationSub.textContent = g.label + ' · LIVE STREAM';
-      } else if (state.error) {
-        els.stationSub.textContent = g.label + ' · STREAM UNAVAILABLE';
+      if (isActive()) {
+        var showNotice = state.notice && (state.status === 'connecting' || Date.now() < state.noticeUntil);
+        var statusText = showNotice ? state.notice : STATUS_TEXT[state.status];
+        els.stationSub.textContent = g.label + ' · ' + statusText;
+      } else if (state.status === 'error') {
+        els.stationSub.textContent = g.label + ' · ' + (ERROR_TEXT[state.errorReason] || ERROR_TEXT.unknown);
       } else {
         els.stationSub.textContent = g.label + ' · PRESS PLAY';
       }
@@ -517,8 +544,9 @@
     els.onAir.textContent = state.playing ? 'ON AIR' : 'STANDBY';
     els.onAir.classList.toggle('live', state.playing);
     els.artRing.classList.toggle('playing', state.playing);
-    els.playIcon.style.display = state.playing ? 'none' : '';
-    els.stopIcon.style.display = state.playing ? '' : 'none';
+    // Stop is offered while connecting too, so a slow/hanging stream can be cancelled.
+    els.playIcon.style.display = isActive() ? 'none' : '';
+    els.stopIcon.style.display = isActive() ? '' : 'none';
 
     renderStationMeta(current);
     updateMediaSession(current);
@@ -658,7 +686,59 @@
     return { genreId: genreId, stationName: stationName };
   }
 
-  // ---------- Playback ----------
+  // ---------- Playback state machine ----------
+  //
+  // idle -> connecting -> playing <-> buffering
+  //            |             |            |
+  //            +-------> error / auto-skip
+  //
+  // Every play/stop bumps playToken. Callbacks from an older attempt (a late play()
+  // rejection, a watchdog timer) carry the token they were created with and are
+  // ignored once it no longer matches — otherwise a stale rejection from the
+  // previous station overwrites the UI of the one that is actually playing.
+
+  var CONNECT_TIMEOUT_MS = 15000; // no sound within this window: stream is not responding
+  var STALL_TIMEOUT_MS = 20000;   // buffering this long mid-stream: the stream has dropped
+  var AUTO_SKIP_MAX = 3;
+  var NOTICE_MIN_MS = 4000;       // minimum time an auto-skip notice stays on screen
+
+  var STATUS_TEXT = {
+    connecting: 'CONNECTING…',
+    playing: 'LIVE STREAM',
+    buffering: 'BUFFERING…'
+  };
+
+  var ERROR_TEXT = {
+    autoplay: 'TAP PLAY TO START',          // browser blocked play() (autoplay / no user gesture)
+    offline: 'YOU ARE OFFLINE',             // device has no network
+    insecure: 'INSECURE STREAM BLOCKED',    // http:// stream on the https:// site (mixed content)
+    codec: 'FORMAT NOT SUPPORTED HERE',     // this browser can't decode the station's codec
+    decode: 'STREAM DATA CORRUPT',          // MEDIA_ERR_DECODE
+    unreachable: 'STREAM UNREACHABLE',      // DNS/TLS/HTTP failure, dead or invalid URL
+    timeout: 'STREAM NOT RESPONDING',       // connected but no audio arrived in time
+    dropped: 'STREAM DROPPED',              // was playing, then the connection failed/stalled
+    unknown: 'STREAM UNAVAILABLE'
+  };
+
+  // Radio Browser "codec" values -> MIME types for canPlayType().
+  var CODEC_MIME = {
+    'MP3': 'audio/mpeg',
+    'AAC': 'audio/aac',
+    'AAC+': 'audio/aac',
+    'OGG': 'audio/ogg',
+    'OPUS': 'audio/ogg; codecs="opus"',
+    'FLAC': 'audio/flac'
+  };
+
+  var playToken = 0;
+  var watchdog = null;
+  var diagnostics = [];
+  // Last 20 playback failures and stall events, for bug reports: run `copy(rockstationDiagnostics)` in the console.
+  window.rockstationDiagnostics = diagnostics;
+
+  function isActive() {
+    return state.status === 'connecting' || state.status === 'playing' || state.status === 'buffering';
+  }
 
   function currentStation() {
     var stations = state.stationsByGenre[state.genre] || [];
@@ -672,41 +752,139 @@
     return fallback;
   }
 
+  function armWatchdog(token, ms, reason) {
+    clearWatchdog();
+    watchdog = setTimeout(function () { failPlayback(token, reason, null); }, ms);
+  }
+
+  function clearWatchdog() {
+    if (watchdog) {
+      clearTimeout(watchdog);
+      watchdog = null;
+    }
+  }
+
+  function releaseStream() {
+    els.player.pause();
+    els.player.removeAttribute('src');
+    els.player.load();
+  }
+
+  function classifyFailure(station, playErr) {
+    if (playErr && playErr.name === 'NotAllowedError') return 'autoplay';
+    if (navigator.onLine === false) return 'offline';
+    if (location.protocol === 'https:' && station && station.url.indexOf('http:') === 0) return 'insecure';
+    var code = els.player.error ? els.player.error.code : 0;
+    if (code === 2) return 'dropped'; // MEDIA_ERR_NETWORK: data was arriving, then the connection failed
+    if (code === 3) return 'decode';  // MEDIA_ERR_DECODE
+    // MEDIA_ERR_SRC_NOT_SUPPORTED (4) is reported both for "can't decode this format" and for
+    // "couldn't load it at all" (DNS, expired TLS cert, 404…). A declared codec that this
+    // browser says it can't play is what tells the two apart.
+    var mime = station && CODEC_MIME[station.codec];
+    if (mime && !els.player.canPlayType(mime)) return 'codec';
+    return 'unreachable';
+  }
+
+  // kind: 'failure' (playback gave up or auto-skipped) or 'stalled' (informational).
+  function logDiagnostic(station, reason, playErr, kind) {
+    var mediaErr = els.player.error;
+    var entry = {
+      time: new Date().toISOString(),
+      kind: kind || 'failure',
+      station: station ? station.name : null,
+      url: station ? station.url : null,
+      codec: station ? station.codec || '' : '',
+      reason: reason,
+      playError: playErr ? playErr.name + ': ' + playErr.message : null,
+      mediaError: mediaErr ? mediaErr.code + ' ' + (mediaErr.message || '') : null,
+      networkState: els.player.networkState,
+      readyState: els.player.readyState,
+      online: navigator.onLine,
+      userAgent: navigator.userAgent
+    };
+    diagnostics.push(entry);
+    if (diagnostics.length > 20) diagnostics.shift();
+    if (entry.kind === 'failure') console.warn('[RockStation] playback failed (' + reason + '):', entry);
+    else console.info('[RockStation] ' + entry.kind + ':', entry);
+  }
+
+  function failPlayback(token, reason, playErr) {
+    if (token !== playToken || !isActive()) return;
+    var station = state.activeStation;
+    reason = reason || classifyFailure(station, playErr);
+    logDiagnostic(station, reason, playErr);
+    clearWatchdog();
+    state.playing = false;
+
+    // An autoplay block or a lost connection isn't this station's fault — skipping
+    // would just fail the same way on the next one.
+    var skippable = reason !== 'autoplay' && reason !== 'offline';
+    var stations = state.stationsByGenre[state.genre] || [];
+    if (skippable && state.autoSkipCount < AUTO_SKIP_MAX && stations.length > 1) {
+      state.autoSkipCount++;
+      skip(1, true);
+      // Set after skip(): playCurrent() clears notices left over from earlier attempts.
+      state.notice = ERROR_TEXT[reason] + ' · TRYING NEXT';
+      state.noticeUntil = Date.now() + NOTICE_MIN_MS;
+      render();
+      return;
+    }
+
+    playToken++;
+    state.autoSkipCount = 0;
+    state.notice = '';
+    state.status = 'error';
+    state.errorReason = reason;
+    releaseStream();
+    render();
+  }
+
   function playCurrent() {
     var station = currentStation();
     if (!station) return;
-    state.error = false;
+    var token = ++playToken;
+    state.activeStation = station;
+    state.playing = false;
+    state.status = 'connecting';
+    state.errorReason = '';
+    state.notice = '';
     els.player.src = station.url;
     var playPromise = els.player.play();
     if (playPromise && playPromise.catch) {
-      playPromise.catch(function () {
-        state.playing = false;
-        state.error = true;
-        render();
+      playPromise.catch(function (err) {
+        // AbortError here means a newer play/stop replaced this attempt — not a failure.
+        if (err && err.name === 'AbortError') return;
+        failPlayback(token, null, err);
       });
     }
-    state.playing = true;
+    armWatchdog(token, CONNECT_TIMEOUT_MS, 'timeout');
     render();
   }
 
   function stopPlayback() {
-    els.player.pause();
-    els.player.removeAttribute('src');
-    els.player.load();
+    playToken++;
+    clearWatchdog();
     state.playing = false;
+    state.status = 'idle';
+    state.notice = '';
+    state.autoSkipCount = 0;
+    releaseStream();
     render();
   }
 
   function togglePlay() {
-    if (state.playing) {
+    if (isActive()) {
       stopPlayback();
     } else {
+      state.autoSkipCount = 0;
       playCurrent();
     }
   }
 
   function tuneGenre(id, forcePlay) {
-    var wasPlaying = state.playing;
+    var wasPlaying = isActive();
+    // A previous station's error message shouldn't stick to the newly selected one.
+    if (state.status === 'error') state.status = 'idle';
     state.genre = id;
     render();
 
@@ -728,29 +906,56 @@
     for (var i = 0; i < stations.length; i++) if (stations[i].name === current) { idx = i; break; }
     idx = (idx + direction + stations.length) % stations.length;
     state.selectedByGenre[state.genre] = stations[idx].name;
-    tuneGenre(state.genre, forcePlay !== undefined ? forcePlay : state.playing);
+    tuneGenre(state.genre, forcePlay !== undefined ? forcePlay : isActive());
   }
 
-  var AUTO_SKIP_MAX = 3;
-
   els.player.addEventListener('error', function () {
-    if (state.playing) {
-      state.playing = false;
-      state.error = true;
-      var stations = state.stationsByGenre[state.genre] || [];
-      if (state.autoSkipCount < AUTO_SKIP_MAX && stations.length > 1) {
-        state.autoSkipCount++;
-        skip(1, true);
-      } else {
-        state.autoSkipCount = 0;
-        render();
-      }
-    }
+    failPlayback(playToken, null, null);
   });
   els.player.addEventListener('playing', function () {
-    state.error = false;
+    if (!isActive()) return;
+    clearWatchdog();
+    state.playing = true;
+    state.status = 'playing';
     state.autoSkipCount = 0;
+    // Keep an auto-skip notice readable even if the next station connects instantly.
+    var noticeLeft = state.notice ? state.noticeUntil - Date.now() : 0;
+    if (noticeLeft > 0) setTimeout(render, noticeLeft + 50);
     render();
+  });
+  els.player.addEventListener('waiting', function () {
+    // The initial connect is covered by the connect watchdog; this is a mid-stream stall.
+    if (state.status !== 'playing') return;
+    state.status = 'buffering';
+    armWatchdog(playToken, STALL_TIMEOUT_MS, 'dropped');
+    render();
+  });
+  els.player.addEventListener('stalled', function () {
+    // The browser has received no data for ~3s. Live streams often recover on their own and
+    // audio may still be playing from the buffer, so this is only recorded: the connect
+    // watchdog (while connecting) and the 'waiting' stall watchdog decide on failure.
+    if (!isActive()) return;
+    logDiagnostic(state.activeStation, 'stalled', null, 'stalled');
+  });
+  els.player.addEventListener('pause', function () {
+    // A live stream that ends fires 'pause' right before 'ended' — that's the stream
+    // dropping, not an external pause, so leave it to the 'ended' handler.
+    if (els.player.ended) return;
+    // Paused by something other than us (OS media controls, headphones unplugged,
+    // an incoming call on mobile): reflect it instead of showing ON AIR over silence.
+    if (state.status === 'playing' || state.status === 'buffering') {
+      playToken++;
+      clearWatchdog();
+      state.playing = false;
+      state.status = 'idle';
+      render();
+    }
+  });
+  els.player.addEventListener('ended', function () {
+    // A live stream has no end: the server closed the connection mid-stream.
+    if (state.status === 'playing' || state.status === 'buffering') {
+      failPlayback(playToken, 'dropped', null);
+    }
   });
 
   // Stop the stream when the tab/app is actually being closed or navigated away from
