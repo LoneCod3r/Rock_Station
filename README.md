@@ -115,9 +115,6 @@ BG75STSA93000029979791
 
 </td></tr></table>
 
-<img src="docs/iban-qr.png" alt="QR code containing the IBAN BG75STSA93000029979791" width="180"><br>
-**Scan to copy IBAN**
-
 Your support helps me keep this project free and continue working on new projects.
 
 ⭐ If you find this project useful, consider starring the repo.
