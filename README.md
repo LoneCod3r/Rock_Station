@@ -107,9 +107,14 @@ Requires the [Firebase CLI](https://firebase.google.com/docs/cli), and either `f
 
 If you like RockStation, you can support my work with a small bank transfer.
 
-| **🏦 Bank Transfer** |                          |
-| -------------------- | ------------------------ |
-| **IBAN**             | `BG75STSA93000029979791` |
+**🏦 Bank Transfer — IBAN**
+
+```text
+BG75STSA93000029979791
+```
+
+<img src="docs/iban-qr.png" alt="QR code containing the IBAN BG75STSA93000029979791" width="180"><br>
+<sub>Scan to copy IBAN</sub>
 
 Your support helps me keep this project free and continue working on new projects.
 
