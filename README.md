@@ -124,5 +124,5 @@ Your support helps me keep this project free and continue working on new project
 
 ## 👤 Author
 
-Made by Lone Coder<br>
+Made by [Lone Coder](https://lonecoder.nsh.one/)<br>
 📧 Contact: [lonecoder@nsh.one](mailto:lonecoder@nsh.one)
