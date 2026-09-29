@@ -105,7 +105,7 @@ Requires the [Firebase CLI](https://firebase.google.com/docs/cli), and either `f
 
 ## ☕ Support the Creator
 
-If you like RockStation or it saved you some time, you can support my work with a small bank transfer.
+If you like RockStation, you can support my work with a small bank transfer.
 
 | **🏦 Bank Transfer** |                          |
 | -------------------- | ------------------------ |
