@@ -103,12 +103,14 @@ Requires the [Firebase CLI](https://firebase.google.com/docs/cli), and either `f
 
 ---
 
-## Support the project
+## ☕ Support the Creator
 
-If you enjoy RockStation, consider giving the repository a ⭐ — it helps other people discover the project and lets me know you find it useful.
+If you like RockStation or it saved you some time, you can support my work with a small bank transfer.
 
-If you'd like to support its development directly, a small voluntary bank transfer is always appreciated:
+| **🏦 Bank Transfer** |                          |
+| -------------------- | ------------------------ |
+| **IBAN**             | `BG75STSA93000029979791` |
 
-**IBAN:** `BG75STSA93000029979791`
+Your support helps me keep this project free and continue working on new projects.
 
-Support is entirely optional — RockStation is and will stay free, with no ads and no accounts.
+⭐ If you find this project useful, consider starring the repo.
