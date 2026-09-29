@@ -100,3 +100,15 @@ firebase deploy
 ```
 
 Requires the [Firebase CLI](https://firebase.google.com/docs/cli), and either `firebase login` or a service account key (Project Settings → Service Accounts → Generate new private key) exported as `GOOGLE_APPLICATION_CREDENTIALS` — the latter is a useful fallback since the CLI's interactive login can occasionally fail with an "Unable to verify client" error. The target project is pinned in `.firebaserc`. Never commit a service account key — it grants full admin access to the Firebase project.
+
+---
+
+## Support the project
+
+If you enjoy RockStation, consider giving the repository a ⭐ — it helps other people discover the project and lets me know you find it useful.
+
+If you'd like to support its development directly, a small voluntary bank transfer is always appreciated:
+
+**IBAN:** `BG75STSA93000029979791`
+
+Support is entirely optional — RockStation is and will stay free, with no ads and no accounts.
