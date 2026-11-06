@@ -55,6 +55,29 @@ RockStation is a static, single-page web app that streams live internet radio ac
 
 ---
 
+## Browser Compatibility & Known Issues
+
+RockStation plays every stream through the browser's native HTML5 `<audio>` element and doesn't need any browser extensions.
+
+### Silent playback with audio-processing extensions
+
+Some audio-processing extensions — most notably "Volume Booster"-style extensions — can make RockStation play in silence. Everything else looks normal: the stream connects, **LIVE STREAM** is shown and the playback timer keeps running, but nothing is audible. The browser console reports:
+
+```text
+MediaElementAudioSource outputs zeroes due to CORS access restrictions
+```
+
+**Why it happens:** these extensions reroute the page's `<audio>` element through the Web Audio API (`createMediaElementSource()`). Browsers only let scripts process audio from another origin when that stream was loaded with CORS permission. RockStation's streams come from third-party radio servers and are played as regular media (many of those servers don't send CORS headers at all), so the browser deliberately feeds silence into the extension's audio chain. This is an interaction between the extension and a browser security restriction, not a RockStation playback bug — and it can affect any station, not just one.
+
+**Workaround:**
+- Disable the audio-processing extension for `rockstation.web.app` — e.g. in Brave, go to `brave://extensions/sitePermissions` and add `https://rockstation.web.app` under *Not allowed to use extensions* (this turns off all extensions on RockStation only; they keep working on every other site).
+- Or set the extension's *Site access* to *On specific sites*, so it only runs where you actually want audio enhancement.
+- Reload RockStation after changing extension permissions — an `<audio>` element the extension has already captured stays silent until the page is reloaded.
+
+**Works in a Brave Private Window but not in your normal profile?** Brave Private Windows disable extensions by default, so this difference is a strong sign that an extension in your regular profile is the cause.
+
+---
+
 ## Project structure
 
 ```
